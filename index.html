@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tu Vida Digital - Juego Interactivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 min-h-screen">
+    <div id="app"></div>
+
+    <script>
+        // Estado del juego
+        let state = {
+            currentScene: 0,
+            scores: {
+                reputation: 50,
+                privacy: 50,
+                security: 50,
+                relationships: 50
+            },
+            choices: [],
+            showResult: false,
+            showFeedback: false
+        };
+
+        // Escenarios del juego
+        const scenarios = [
+            {
+                id: 1,
+                title: "📱 Nueva Red Social",
+                situation: "Acabas de descargar TrendUp, la app que todos usan. Te pide permisos de contactos, ubicación en tiempo real, acceso a fotos y micrófono. Tu mejor amigo ya está dentro y dice que es increíble.",
+                image: "🤳",
+                options: [
+                    {
+                        text: "Acepto todos los permisos. Si millones de personas lo usan, debe ser seguro",
+                        meme: "🤪",
+                        feedback: "El argumento de 'todo el mundo lo hace' no valida nada. Millones de personas también comparten sus contraseñas o caen en estafas. La app ahora puede rastrear cada movimiento, ver todas tus fotos y escucharte en cualquier momento. Tus datos se venderán a anunciantes.",
+                        impact: { privacy: -25, security: -20, reputation: -5, relationships: 5 }
+                    },
+                    {
+                        text: "Leo la política de privacidad y acepto solo contactos y fotos",
+                        meme: "🤔",
+                        feedback: "Parece prudente leer la política, pero... ¿la entendiste realmente? Son 47 páginas de jerga legal. Y aun así, diste acceso a contactos (privacidad de otros) y fotos (pueden contener info personal). La app puede crear un perfil completo de tu vida social.",
+                        impact: { privacy: -5, security: 0, reputation: 5, relationships: 5 }
+                    },
+                    {
+                        text: "Solo acepto lo mínimo indispensable y reviso los permisos después",
+                        meme: "😎",
+                        feedback: "¡Smart! Muchas apps funcionan perfectamente con permisos mínimos. Revisar después te permite ajustar según tu experiencia real. Proteges tu privacidad sin aislarte. Bonus: la app consume menos batería con menos permisos activos.",
+                        impact: { privacy: 20, security: 20, reputation: 10, relationships: 0 }
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: "🔐 Email de la Universidad",
+                situation: "Vas a crear tu email para solicitar plaza en la universidad. Es la cuenta que verán profesores, administración y posibles empleadores cuando busquen prácticas. ¿Qué dirección eliges?",
+                image: "📧",
+                options: [
+                    {
+                        text: "nombre.apellido@email.com - claro y profesional",
+                        meme: "👔",
+                        feedback: "Parece lo correcto, pero expones tu identidad completa. Cualquiera puede googlear tu nombre completo y encontrar TODO sobre ti: redes sociales, fotos antiguas, comentarios en foros. Es fácil para reclutadores, pero también para acosadores. Sin privacidad.",
+                        impact: { privacy: -15, security: -5, reputation: 15, relationships: 5 }
+                    },
+                    {
+                        text: "nombre_apellido2003@email.com - incluyo mi año de nacimiento",
+                        meme: "📅",
+                        feedback: "Grave error. Acabas de regalar un dato que se usa para robar identidad y recuperar contraseñas. Los hackers buscan fechas de nacimiento. Además, cuando tengas 30 años, ese '2003' en tu email profesional te hará parecer menos serio. Piensa a largo plazo.",
+                        impact: { privacy: -20, security: -25, reputation: -10, relationships: 0 }
+                    },
+                    {
+                        text: "n.apellido.universidad@email.com - inicial y contexto",
+                        meme: "🎯",
+                        feedback: "Equilibrio inteligente. La inicial dificulta el rastreo (hay cientos con tu apellido), el contexto 'universidad' lo mantiene profesional y organizado. Proteges privacidad sin perder profesionalismo. En el futuro puedes crear variantes para trabajo.",
+                        impact: { privacy: 20, security: 15, reputation: 20, relationships: 5 }
+                    }
+                ]
+            },
+            {
+                id: 3,
+                title: "📸 Noche de Fiesta",
+                situation: "Es la fiesta de fin de curso. Tu mejor amigo sube un álbum de 30 fotos de la noche a Instagram. En varias sales tú en situaciones un poco... comprometedoras. Ya tiene 200 likes en 20 minutos.",
+                image: "🎉",
+                options: [
+                    {
+                        text: "Le comento: 'jajaja épica la noche! 🔥' para quedar bien",
+                        meme: "😅",
+                        feedback: "Acabas de confirmar públicamente que eres tú. Ahora Instagram te vinculará automáticamente, esas fotos aparecerán en búsquedas de tu nombre, y los algoritmos las indexarán para siempre. Los reclutadores de empresas revisan esto. Mal move.",
+                        impact: { reputation: -20, privacy: -15, relationships: 5 }
+                    },
+                    {
+                        text: "Le escribo por privado pidiéndole que quite las peores fotos",
+                        meme: "💬",
+                        feedback: "Comunicación directa parece correcto... pero las fotos ya llevan 20 minutos online. 200 personas las vieron, algunas las guardaron o hicieron capturas. Aunque las quite ahora, ya es tarde. La lección: evita situaciones que no quieres documentadas.",
+                        impact: { reputation: 5, relationships: 10, privacy: -5, security: 0 }
+                    },
+                    {
+                        text: "Solicito que me desetiquete de todas sin dar explicaciones",
+                        meme: "🚫",
+                        feedback: "Smart move. Aunque las fotos siguen en su perfil, no estarán vinculadas al tuyo. Los buscadores no te relacionarán con ellas. Tu amigo puede molestarse, pero tu futuro profesional vale más. Proteger tu huella digital es prioridad.",
+                        impact: { reputation: 15, privacy: 20, relationships: -10, security: 10 }
+                    }
+                ]
+            },
+            {
+                id: 4,
+                title: "💬 Match Interesante",
+                situation: "Alguien muy atractivo te hace match en una app de citas. Después de charlar 30 minutos tienen buena química. Te dice: 'Odio esta app, se me cuelga. ¿Seguimos en WhatsApp? Mi número es 666-XXX-XXX. ¿El tuyo?'",
+                image: "💘",
+                options: [
+                    {
+                        text: "Le paso mi número. Ya hemos hablado media hora, parece confiable",
+                        meme: "📱",
+                        feedback: "Media hora no es suficiente para conocer a alguien. Tu número es la llave a WhatsApp, Telegram, rastreo de ubicación, y una vez compartido no lo controlas. ¿Y si vende números? ¿Y si es un acosador? Necesitas más tiempo.",
+                        impact: { privacy: -25, security: -25, relationships: 10, reputation: -5 }
+                    },
+                    {
+                        text: "Le digo: 'Prefiero Instagram, añádeme: @mi_usuario'",
+                        meme: "📸",
+                        feedback: "Cambias una app por otra... pero Instagram muestra toda tu vida: amigos, lugares, rutinas. Es casi peor que el número. Si resulta ser raro/a, ahora sabe dónde estudias, con quién sales, qué haces. Piensa en las consecuencias.",
+                        impact: { privacy: -15, security: -15, relationships: 10, reputation: -5 }
+                    },
+                    {
+                        text: "Sugiero seguir en la app unos días más antes de compartir datos",
+                        meme: "🛡️",
+                        feedback: "¡Inteligente! Si realmente le interesas, esperará. Si desaparece, esquivaste una bala. Muchos estafadores usan esta táctica: crear urgencia para obtener datos rápido. Tu instinto de protección funciona bien.",
+                        impact: { privacy: 20, security: 25, relationships: -5, reputation: 15 }
+                    }
+                ]
+            },
+            {
+                id: 5,
+                title: "🎮 Drama en el Servidor",
+                situation: "En tu servidor de Discord favorito, varios usuarios están atacando a un chico nuevo. Lo critican porque tiene un acento diferente y han empezado a hacer memes. Algunos son tus amigos. El ambiente se está poniendo heavy.",
+                image: "😢",
+                options: [
+                    {
+                        text: "Me río pero no participo activamente en el acoso",
+                        meme: "😬",
+                        feedback: "Reírte es participar. Le estás dando validación social a los acosadores. Tu risa les dice 'esto está bien, sigue'. Aunque no escribiste nada, tu presencia silenciosa apoya el acoso. El chico ve que nadie lo defiende. Complicidad pasiva.",
+                        impact: { reputation: -25, relationships: -20, security: -10 }
+                    },
+                    {
+                        text: "Salgo del chat sin decir nada. No es mi problema",
+                        meme: "🙈",
+                        feedback: "Al menos no participaste... pero tampoco ayudaste. Esa persona sigue siendo acosada mientras tú desapareces. A veces el silencio es casi tan malo como participar. Podrías haber marcado la diferencia con una sola palabra de apoyo.",
+                        impact: { reputation: -10, relationships: -15, privacy: 5 }
+                    },
+                    {
+                        text: "Escribo: 'Esto se está pasando de la raya' y reporto a los mods",
+                        meme: "🦸",
+                        feedback: "¡Valentía! Puede que algunos se burlen de ti por 'arruinar la diversión', pero acabas de salvar a alguien. Los mods actuarán, los acosadores serán baneados, y el chico recordará que alguien lo defendió. Tu reputación REAL sube enormemente.",
+                        impact: { reputation: 30, relationships: 15, security: 10 }
+                    }
+                ]
+            },
+            {
+                id: 6,
+                title: "📍 Viaje de Verano",
+                situation: "¡Te vas 10 días a Bali! Tienes 1800 seguidores y quieres compartir la experiencia. Tus padres están preocupados por la seguridad de la casa vacía. ¿Cómo compartes tu viaje?",
+                image: "✈️",
+                options: [
+                    {
+                        text: "Stories diarias etiquetando cada lugar: 'Día 3 en Ubud! 🌴'",
+                        meme: "📱",
+                        feedback: "Creaste un mapa completo de tu ausencia. Tus 1800 seguidores (y sus contactos) saben que tu casa está vacía exactamente 10 días. Los ladrones buscan esto activamente. Además, las fotos tienen metadatos de ubicación. Muy arriesgado.",
+                        impact: { security: -30, privacy: -25, reputation: 5, relationships: 10 }
+                    },
+                    {
+                        text: "Subo fotos sin ubicación pero escribo 'De viaje! ☀️'",
+                        meme: "📸",
+                        feedback: "Mejor, pero sigues anunciando tu ausencia. La gente puede deducir cuánto tiempo estarás fuera por tus publicaciones. Y aunque quites la ubicación, el fondo de las fotos puede identificar exactamente dónde estás. No es suficiente protección.",
+                        impact: { security: -15, privacy: -10, reputation: 5, relationships: 10 }
+                    },
+                    {
+                        text: "Hago fotos pero las publico todas juntas cuando vuelvo a casa",
+                        meme: "🎯",
+                        feedback: "Jugada maestra. Disfrutas sin anunciar tu ausencia, compartes después los momentos, y tu casa estuvo segura. Bonus: viviste el viaje sin estar pendiente de likes. La gente igualmente disfruta viendo tu viaje 'en diferido'.",
+                        impact: { security: 25, privacy: 20, reputation: 15, relationships: 5 }
+                    }
+                ]
+            },
+            {
+                id: 7,
+                title: "💼 Oportunidad Laboral",
+                situation: "Email de 'TechFuture Inc': 'Hola! Vimos tu LinkedIn y nos interesa tu perfil. Ofrecemos 1200€/mes, trabajo remoto 4h/día. Solo necesitas hacer un curso de formación de 45€. Miles de jóvenes ya trabajan con nosotros. Plazas limitadas!'",
+                image: "💰",
+                options: [
+                    {
+                        text: "Busco 'TechFuture Inc opiniones' en Google antes de decidir",
+                        meme: "🔍",
+                        feedback: "Buen instinto, pero las estafas buenas tienen reseñas falsas compradas. Encuentras comentarios positivos que parecen reales. Lo correcto es verificar: registro mercantil, página web profesional, dirección física real. Buscar opiniones no es suficiente.",
+                        impact: { security: 5, privacy: -5, reputation: 5 }
+                    },
+                    {
+                        text: "Les respondo pidiendo más detalles sobre la empresa y el trabajo",
+                        meme: "💬",
+                        feedback: "Parece prudente, pero al responder confirmaste que tu email está activo. Te llegarán más estafas similares. Si fuera una oferta real, tendrían web profesional con toda la info. Las empresas serias no piden dinero por adelantado NUNCA.",
+                        impact: { security: -10, privacy: -15, reputation: 0 }
+                    },
+                    {
+                        text: "Lo elimino y reporto como spam. Si piden dinero, es estafa",
+                        meme: "🛡️",
+                        feedback: "¡Correcto! Regla de oro: empresas reales NUNCA piden dinero para contratarte. Los 45€ son solo el principio, luego pedirán más. Reportar ayuda a proteger a otros. Tu radar de estafas funciona perfectamente. Stay safe.",
+                        impact: { security: 25, privacy: 15, reputation: 15 }
+                    }
+                ]
+            },
+            {
+                id: 8,
+                title: "🔓 WiFi en Cafetería",
+                situation: "Estás en una cafetería esperando a un amigo. Ves dos redes WiFi: 'CafeLibre_WiFi' (abierta) y 'CafeLibre_Clientes' (con contraseña en la pizarra). Necesitas revisar tu cuenta del banco urgentemente.",
+                image: "☕",
+                options: [
+                    {
+                        text: "Me conecto a 'CafeLibre_WiFi' que es abierta y más rápida",
+                        meme: "⚡",
+                        feedback: "PELIGRO. Las redes abiertas son trampas para hackers. Cualquiera puede interceptar tu conexión y robar tus credenciales bancarias. Los ciberdelincuentes crean WiFis falsos con nombres similares específicamente para esto. Nunca uses banca en WiFi público abierto.",
+                        impact: { security: -40, privacy: -35, reputation: -10 }
+                    },
+                    {
+                        text: "Uso la red con contraseña 'CafeLibre_Clientes' que parece más segura",
+                        meme: "🔑",
+                        feedback: "Mejor que la abierta, pero... la contraseña está en una pizarra visible para todos. No es realmente privada. Sigues expuesto a ataques. Tus datos bancarios no deberían viajar por ninguna red pública, con o sin contraseña.",
+                        impact: { security: -20, privacy: -15, reputation: -5 }
+                    },
+                    {
+                        text: "Uso mis datos móviles 4G para el banco. La seguridad no tiene precio",
+                        meme: "📱",
+                        feedback: "Decisión inteligente. Tu conexión 4G/5G es personal y cifrada. Vale más que unos MB de datos. Las redes públicas son paraíso de hackers. Si DEBES usar WiFi público para algo sensible, mínimo usa VPN. Pero lo mejor es evitarlo.",
+                        impact: { security: 30, privacy: 25, reputation: 15 }
+                    }
+                ]
+            }
+        ];
+
+        // Funciones auxiliares
+        function getScoreColor(score) {
+            if (score >= 70) return 'text-green-600';
+            if (score >= 40) return 'text-yellow-600';
+            return 'text-red-600';
+        }
+
+        function getFinalMessage() {
+            const avgScore = (state.scores.reputation + state.scores.privacy + state.scores.security + state.scores.relationships) / 4;
+            
+            if (avgScore >= 70) {
+                return {
+                    title: "🏆 ¡LEYENDA DIGITAL!",
+                    message: "Eres un crack de la huella digital. Sabes proteger tu privacidad, seguridad y reputación sin caer en trampas obvias. ¡Sigue así y enseña a otros!",
+                    emoji: "🔥"
+                };
+            } else if (avgScore >= 50) {
+                return {
+                    title: "👍 Buen Trabajo",
+                    message: "Vas por buen camino pero cometiste algunos errores típicos. Revisa tus decisiones, aprende de los fallos y serás un pro.",
+                    emoji: "💪"
+                };
+            } else if (avgScore >= 30) {
+                return {
+                    title: "⚠️ Zona de Peligro",
+                    message: "Tu huella digital está en riesgo serio. Necesitas ser mucho más consciente de tus decisiones online. Cada click cuenta.",
+                    emoji: "😬"
+                };
+            } else {
+                return {
+                    title: "🚨 ALERTA MÁXIMA",
+                    message: "Houston, tenemos un problema. Tu huella digital es un desastre total. ¡Necesitas repensar TODAS tus acciones online antes de que sea tarde!",
+                    emoji: "😱"
+                };
+            }
+        }
+
+        // Manejadores de eventos
+        function handleChoice(optionIndex) {
+            const scenario = scenarios[state.currentScene];
+            const option = scenario.options[optionIndex];
+            
+            // Actualizar scores
+            Object.keys(option.impact).forEach(key => {
+                state.scores[key] = Math.max(0, Math.min(100, state.scores[key] + option.impact[key]));
+            });
+            
+            // Guardar elección
+            state.choices.push({
+                scenario: scenario.title,
+                choice: option.text,
+                meme: option.meme,
+                feedback: option.feedback
+            });
+            
+            // Mostrar feedback
+            state.showFeedback = true;
+            render();
+        }
+
+        function handleContinue() {
+            state.showFeedback = false;
+            if (state.currentScene < scenarios.length - 1) {
+                state.currentScene++;
+            } else {
+                state.showResult = true;
+            }
+            render();
+        }
+
+        function resetGame() {
+            state = {
+                currentScene: 0,
+                scores: {
+                    reputation: 50,
+                    privacy: 50,
+                    security: 50,
+                    relationships: 50
+                },
+                choices: [],
+                showResult: false,
+                showFeedback: false
+            };
+            render();
+        }
+
+        // Función de renderizado
+        function render() {
+            const app = document.getElementById('app');
+            
+            if (state.showResult) {
+                app.innerHTML = renderResults();
+            } else {
+                app.innerHTML = renderGame();
+            }
+        }
+
+        function renderResults() {
+            const finalMsg = getFinalMessage();
+            return `
+                <div class="min-h-screen p-4 md:p-8">
+                    <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-8 fade-in">
+                        <div class="text-center mb-8">
+                            <div class="text-8xl mb-4">${finalMsg.emoji}</div>
+                            <h1 class="text-4xl font-bold text-gray-800 mb-2">${finalMsg.title}</h1>
+                            <p class="text-xl text-gray-600">${finalMsg.message}</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                            <div class="bg-gradient-to-br from-blue-100 to-blue-200 p-4 rounded-xl text-center">
+                                <div class="text-3xl mb-2">🛡️</div>
+                                <div class="text-sm text-gray-600">Seguridad</div>
+                                <div class="text-2xl font-bold ${getScoreColor(state.scores.security)}">
+                                    ${state.scores.security}%
+                                </div>
+                            </div>
+                            <div class="bg-gradient-to-br from-purple-100 to-purple-200 p-4 rounded-xl text-center">
+                                <div class="text-3xl mb-2">🔒</div>
+                                <div class="text-sm text-gray-600">Privacidad</div>
+                                <div class="text-2xl font-bold ${getScoreColor(state.scores.privacy)}">
+                                    ${state.scores.privacy}%
+                                </div>
+                            </div>
+                            <div class="bg-gradient-to-br from-green-100 to-green-200 p-4 rounded-xl text-center">
+                                <div class="text-3xl mb-2">🏆</div>
+                                <div class="text-sm text-gray-600">Reputación</div>
+                                <div class="text-2xl font-bold ${getScoreColor(state.scores.reputation)}">
+                                    ${state.scores.reputation}%
+                                </div>
+                            </div>
+                            <div class="bg-gradient-to-br from-pink-100 to-pink-200 p-4 rounded-xl text-center">
+                                <div class="text-3xl mb-2">👥</div>
+                                <div class="text-sm text-gray-600">Relaciones</div>
+                                <div class="text-2xl font-bold ${getScoreColor(state.scores.relationships)}">
+                                    ${state.scores.relationships}%
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-xl p-6 mb-6">
+                            <h3 class="text-xl font-bold mb-4 text-gray-800">📋 Resumen de tus decisiones:</h3>
+                            <div class="space-y-3 max-h-96 overflow-y-auto">
+                                ${state.choices.map(choice => `
+                                    <div class="bg-white p-4 rounded-lg shadow">
+                                        <div class="flex items-start gap-3">
+                                            <div class="text-3xl">${choice.meme}</div>
+                                            <div class="flex-1">
+                                                <div class="font-semibold text-gray-800">${choice.scenario}</div>
+                                                <div class="text-sm text-gray-600 mt-1">${choice.choice}</div>
+                                                <div class="text-sm text-gray-500 mt-2 italic">${choice.feedback}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-6 text-center">
+                            <h3 class="text-2xl font-bold mb-3">🎯 Recuerda:</h3>
+                            <ul class="text-left space-y-2 max-w-2xl mx-auto">
+                                <li>✅ Tu huella digital es permanente</li>
+                                <li>✅ Piensa antes de publicar</li>
+                                <li>✅ Protege tu privacidad y contraseñas</li>
+                                <li>✅ No participes en ciberacoso</li>
+                                <li>✅ Pide ayuda si te sientes acosado/a</li>
+                                <li>✅ Si es gratis, TÚ eres el producto</li>
+                            </ul>
+                        </div>
+
+                        <button
+                            onclick="resetGame()"
+                            class="w-full mt-6 bg-gradient-to-r from-green-500 to-blue-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transition-all">
+                            🔄 Jugar de Nuevo
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGame() {
+            const scenario = scenarios[state.currentScene];
+            
+            if (!state.showFeedback) {
+                return `
+                    <div class="min-h-screen p-4 md:p-8">
+                        <div class="max-w-4xl mx-auto">
+                            <!-- Header con scores -->
+                            <div class="bg-white rounded-2xl shadow-xl p-4 mb-6 fade-in">
+                                <div class="flex justify-between items-center gap-2 flex-wrap">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xl">🛡️</span>
+                                        <div class="text-xs text-gray-600">Seguridad</div>
+                                        <div class="font-bold ${getScoreColor(state.scores.security)}">${state.scores.security}%</div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xl">🔒</span>
+                                        <div class="text-xs text-gray-600">Privacidad</div>
+                                        <div class="font-bold ${getScoreColor(state.scores.privacy)}">${state.scores.privacy}%</div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xl">🏆</span>
+                                        <div class="text-xs text-gray-600">Reputación</div>
+                                        <div class="font-bold ${getScoreColor(state.scores.reputation)}">${state.scores.reputation}%</div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xl">👥</span>
+                                        <div class="text-xs text-gray-600">Relaciones</div>
+                                        <div class="font-bold ${getScoreColor(state.scores.relationships)}">${state.scores.relationships}%</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Escenario actual -->
+                            <div class="bg-white rounded-2xl shadow-xl p-8 fade-in">
+                                <div class="text-center mb-6">
+                                    <div class="text-sm text-gray-500 mb-2">
+                                        Escenario ${state.currentScene + 1} de ${scenarios.length}
+                                    </div>
+                                    <div class="text-6xl mb-4">${scenario.image}</div>
+                                    <h2 class="text-3xl font-bold text-gray-800 mb-4">${scenario.title}</h2>
+                                    <p class="text-lg text-gray-600">${scenario.situation}</p>
+                                </div>
+
+                                <div class="space-y-4">
+                                    ${scenario.options.map((option, idx) => `
+                                        <button
+                                            onclick="handleChoice(${idx})"
+                                            class="w-full p-6 rounded-xl text-left transition-all transform hover:scale-105 hover:shadow-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
+                                            <div class="flex items-center gap-4">
+                                                <div class="text-4xl">${option.meme}</div>
+                                                <div class="flex-1 font-semibold text-lg">${option.text}</div>
+                                            </div>
+                                        </button>
+                                    `).join('')}
+                                </div>
+
+                                <div class="mt-6 text-center text-gray-500 text-sm">
+                                    💡 Piensa bien antes de elegir... ¡tus decisiones tienen consecuencias!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Mostrar feedback
+                const lastChoice = state.choices[state.choices.length - 1];
+                return `
+                    <div class="min-h-screen p-4 md:p-8">
+                        <div class="max-w-4xl mx-auto">
+                            <!-- Header con scores -->
+                            <div class="bg-white rounded-2xl shadow-xl p-4 mb-6 fade-in">
+                                <div class="flex justify-between items-center gap-2 flex-wrap">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xl">🛡️</span>
+                                        <div class="text-xs text-gray-600">Seguridad</div>
+                                        <div class="font-bold ${getScoreColor(state.scores.security)}">${state.scores.security}%</div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xl">🔒</span>
+                                        <div class="text-xs text-gray-600">Privacidad</div>
+                                        <div class="font-bold ${getScoreColor(state.scores.privacy)}">${state.scores.privacy}%</div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xl">🏆</span>
+                                        <div class="text-xs text-gray-600">Reputación</div>
+                                        <div class="font-bold ${getScoreColor(state.scores.reputation)}">${state.scores.reputation}%</div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xl">👥</span>
+                                        <div class="text-xs text-gray-600">Relaciones</div>
+                                        <div class="font-bold ${getScoreColor(state.scores.relationships)}">${state.scores.relationships}%</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Feedback -->
+                            <div class="bg-white rounded-2xl shadow-xl p-8 fade-in">
+                                <div class="text-center mb-6">
+                                    <div class="text-8xl mb-4">${lastChoice.meme}</div>
+                                    <h2 class="text-3xl font-bold text-gray-800 mb-4">
+                                        Consecuencia de tu decisión
+                                    </h2>
+                                </div>
+
+                                <div class="bg-gray-50 rounded-xl p-6 mb-6">
+                                    <p class="text-lg text-gray-700 leading-relaxed">
+                                        ${lastChoice.feedback}
+                                    </p>
+                                </div>
+
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                                    <div class="bg-blue-50 p-3 rounded-lg text-center">
+                                        <span class="text-2xl">🛡️</span>
+                                        <div class="text-xs text-gray-600">Seguridad</div>
+                                        <div class="text-xl font-bold ${getScoreColor(state.scores.security)}">
+                                            ${state.scores.security}%
+                                        </div>
+                                    </div>
+                                    <div class="bg-purple-50 p-3 rounded-lg text-center">
+                                        <span class="text-2xl">🔒</span>
+                                        <div class="text-xs text-gray-600">Privacidad</div>
+                                        <div class="text-xl font-bold ${getScoreColor(state.scores.privacy)}">
+                                            ${state.scores.privacy}%
+                                        </div>
+                                    </div>
+                                    <div class="bg-green-50 p-3 rounded-lg text-center">
+                                        <span class="text-2xl">🏆</span>
+                                        <div class="text-xs text-gray-600">Reputación</div>
+                                        <div class="text-xl font-bold ${getScoreColor(state.scores.reputation)}">
+                                            ${state.scores.reputation}%
+                                        </div>
+                                    </div>
+                                    <div class="bg-pink-50 p-3 rounded-lg text-center">
+                                        <span class="text-2xl">👥</span>
+                                        <div class="text-xs text-gray-600">Relaciones</div>
+                                        <div class="text-xl font-bold ${getScoreColor(state.scores.relationships)}">
+                                            ${state.scores.relationships}%
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onclick="handleContinue()"
+                                    class="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                                    ${state.currentScene < scenarios.length - 1 ? 
+                                        'Siguiente Escenario ➡️' : 
+                                        'Ver Resultados Finales 🏆'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Iniciar el juego
+        render();
+    </script>
+</body>
+</html>
