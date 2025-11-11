@@ -414,11 +414,18 @@
                             </ul>
                         </div>
 
-                        <button
-                            onclick="resetGame()"
-                            class="w-full mt-6 bg-gradient-to-r from-green-500 to-blue-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transition-all">
-                            🔄 Jugar de Nuevo
-                        </button>
+                        <div class="flex flex-col md:flex-row gap-4 mt-6">
+                            <button
+                                onclick="shareResults()"
+                                class="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transition-all">
+                                📸 Compartir mi Resultado
+                            </button>
+                            <button
+                                onclick="resetGame()"
+                                class="flex-1 bg-gradient-to-r from-green-500 to-blue-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transition-all">
+                                🔄 Jugar de Nuevo
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
