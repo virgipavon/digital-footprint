@@ -331,6 +331,71 @@
             render();
         }
 
+        function shareResults() {
+            const finalMsg = getFinalMessage();
+            const avgScore = Math.round((state.scores.reputation + state.scores.privacy + state.scores.security + state.scores.relationships) / 4);
+            
+            const shareText = `🎮 Tu Vida Digital - Mi Resultado 🎮
+
+${finalMsg.emoji} ${finalMsg.title}
+
+📊 Puntuación Total: ${avgScore}%
+
+🛡️ Seguridad: ${state.scores.security}%
+🔒 Privacidad: ${state.scores.privacy}%
+🏆 Reputación: ${state.scores.reputation}%
+👥 Relaciones: ${state.scores.relationships}%
+
+¡Pon a prueba tu huella digital! 🔥`;
+
+            // Intentar compartir usando Web Share API (móviles)
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Tu Vida Digital - Mi Resultado',
+                    text: shareText,
+                    url: window.location.href
+                }).catch(err => {
+                    // Si falla, copiar al portapapeles
+                    copyToClipboard(shareText);
+                });
+            } else {
+                // En desktop, copiar al portapapeles
+                copyToClipboard(shareText);
+            }
+        }
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('✅ ¡Resultado copiado al portapapeles! Pégalo donde quieras compartirlo.');
+                }).catch(() => {
+                    showShareText(text);
+                });
+            } else {
+                showShareText(text);
+            }
+        }
+
+        function showShareText(text) {
+            // Crear modal con el texto
+            const modal = document.createElement('div');
+            modal.innerHTML = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px;">
+                    <div style="background: white; padding: 30px; border-radius: 20px; max-width: 500px; width: 100%;">
+                        <h3 style="font-size: 24px; font-weight: bold; margin-bottom: 15px; text-align: center;">📸 Tu Resultado</h3>
+                        <textarea readonly style="width: 100%; height: 300px; padding: 15px; border: 2px solid #e5e7eb; border-radius: 10px; font-family: monospace; font-size: 14px; resize: none;">${text}</textarea>
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button onclick="this.parentElement.parentElement.parentElement.remove()" style="flex: 1; background: linear-gradient(to right, #10b981, #3b82f6); color: white; padding: 12px; border-radius: 10px; font-weight: bold; border: none; cursor: pointer;">
+                                ✅ Cerrar
+                            </button>
+                        </div>
+                        <p style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 10px;">Copia el texto y compártelo donde quieras 🚀</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
         // Función de renderizado
         function render() {
             const app = document.getElementById('app');
@@ -589,6 +654,12 @@
 
         // Iniciar el juego
         render();
+
+        // Hacer las funciones globales para que funcionen los onclick
+        window.handleChoice = handleChoice;
+        window.handleContinue = handleContinue;
+        window.resetGame = resetGame;
+        window.shareResults = shareResults;
     </script>
 </body>
 </html>
