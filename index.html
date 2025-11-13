@@ -253,6 +253,19 @@
             return 'text-red-600';
         }
 
+        function getScoreChange(key) {
+            if (!state.previousScores) return '';
+            
+            const change = state.scores[key] - state.previousScores[key];
+            if (change === 0) return '<div class="text-xs text-gray-500 mt-1">Sin cambios</div>';
+            
+            const color = change > 0 ? 'text-green-600' : 'text-red-600';
+            const arrow = change > 0 ? '↑' : '↓';
+            const sign = change > 0 ? '+' : '';
+            
+            return `<div class="text-sm font-bold ${color} mt-1">${arrow} ${sign}${change}</div>`;
+        }
+
         function getFinalMessage() {
             const avgScore = (state.scores.reputation + state.scores.privacy + state.scores.security + state.scores.relationships) / 4;
             
@@ -329,6 +342,7 @@
                     security: 50,
                     relationships: 50
                 },
+                previousScores: null,
                 choices: [],
                 showResult: false,
                 showFeedback: false
