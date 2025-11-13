@@ -7,15 +7,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @keyframes fadeIn {
-            from { opacity: 0 }
-            to { opacity: 1 }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .fade-in {
             animation: fadeIn 0.5s ease-out;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-800 via-red-600 to-pink-600 min-h-screen">
+<body class="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 min-h-screen">
     <div id="app"></div>
 
     <script>
@@ -28,6 +28,7 @@
                 security: 50,
                 relationships: 50
             },
+            previousScores: null,
             choices: [],
             showResult: false,
             showFeedback: false
@@ -287,6 +288,9 @@
             const scenario = scenarios[state.currentScene];
             const option = scenario.options[optionIndex];
             
+            // Guardar scores anteriores
+            state.previousScores = { ...state.scores };
+            
             // Actualizar scores
             Object.keys(option.impact).forEach(key => {
                 state.scores[key] = Math.max(0, Math.min(100, state.scores[key] + option.impact[key]));
@@ -297,7 +301,8 @@
                 scenario: scenario.title,
                 choice: option.text,
                 meme: option.meme,
-                feedback: option.feedback
+                feedback: option.feedback,
+                impact: option.impact
             });
             
             // Mostrar feedback
@@ -614,6 +619,7 @@ ${finalMsg.emoji} ${finalMsg.title}
                                         <div class="text-xl font-bold ${getScoreColor(state.scores.security)}">
                                             ${state.scores.security}%
                                         </div>
+                                        ${getScoreChange('security')}
                                     </div>
                                     <div class="bg-purple-50 p-3 rounded-lg text-center">
                                         <span class="text-2xl">🔒</span>
@@ -621,6 +627,7 @@ ${finalMsg.emoji} ${finalMsg.title}
                                         <div class="text-xl font-bold ${getScoreColor(state.scores.privacy)}">
                                             ${state.scores.privacy}%
                                         </div>
+                                        ${getScoreChange('privacy')}
                                     </div>
                                     <div class="bg-green-50 p-3 rounded-lg text-center">
                                         <span class="text-2xl">🏆</span>
@@ -628,6 +635,7 @@ ${finalMsg.emoji} ${finalMsg.title}
                                         <div class="text-xl font-bold ${getScoreColor(state.scores.reputation)}">
                                             ${state.scores.reputation}%
                                         </div>
+                                        ${getScoreChange('reputation')}
                                     </div>
                                     <div class="bg-pink-50 p-3 rounded-lg text-center">
                                         <span class="text-2xl">👥</span>
@@ -635,6 +643,7 @@ ${finalMsg.emoji} ${finalMsg.title}
                                         <div class="text-xl font-bold ${getScoreColor(state.scores.relationships)}">
                                             ${state.scores.relationships}%
                                         </div>
+                                        ${getScoreChange('relationships')}
                                     </div>
                                 </div>
 
